@@ -172,12 +172,29 @@ function setSyncState(state, msg) {
   document.getElementById('sync-label').textContent = msg;
 }
 
+function normalizeKey(key) {
+  const parts = key.split('|');
+  if (parts.length !== 2) return key;
+  const weekPart = parts[0];
+  const dayPart = parts[1];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = new Date(weekPart);
+  if (!isNaN(d.getTime())) {
+    return months[d.getMonth()] + d.getDate() + '-' + d.getFullYear() + '|' + dayPart;
+  }
+  return key;
+}
+
 async function loadData() {
   setSyncState('spin', 'Loading...');
   try {
     const res = await fetch(SCRIPT_URL);
     if (!res.ok) throw new Error('Error ' + res.status);
-    scheduleData = await res.json();
+    const raw = await res.json();
+    scheduleData = {};
+    for (const key in raw) {
+      scheduleData[normalizeKey(key)] = raw[key];
+    }
     setSyncState('ok', 'Synced');
     render();
   } catch(e) {
