@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carpool Scheduler</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .card { background: #fff; border: 1px solid #e5e5e2; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 10px; }
+  label:first-of-type { margin-top: 0; }
+  input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; color: #1a1a1a; background: #fafaf8; transition: border-color 0.15s; }
+  input[type=text]:focus { outline: none; border-color: #1a1a1a; background: #fff; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button { padding: 8px 16px; border: 1px solid #ccc; border-radius: 8px; background: #fff; font-size: 13px; font-weight: 500; cursor: pointer; color: #1a1a1a; transition: background 0.1s; }
+  button:hover { background: #f5f5f3; border-color: #999; }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .btn-primary:hover { background: #333; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+  .status.error { background: #fde8e8; color: #c53030; }
+  .status.success { background: #e6f4ea; color: #276749; }
+  .sync-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; font-size: 13px; color: #666; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sync-dot.ok { background: #1d9e75; }
+  .sync-dot.off { background: #e24b4a; }
+  .sync-dot.spin { background: #ef9f27; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 1.25rem; }
+  .week-label { font-size: 15px; font-weight: 600; flex: 1; }
+  .grid { display: grid; grid-template-columns: 100px repeat(5, 1fr); gap: 6px; margin-bottom: 1rem; }
+  .hday { font-size: 12px; font-weight: 600; color: #888; text-align: center; padding: 6px 4px; }
+  .hname { font-size: 13px; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; padding: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toggle { width: 100%; height: 48px; border-radius: 8px; border: 1px solid #e5e5e2; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.1s; background: #f5f5f3; color: #999; }
+  .toggle:hover { border-color: #999; }
+  .toggle.available { background: #e1f5ee; color: #0f6e56; border-color: #5dcaa5; }
+  .toggle.driving { background: #1d9e75; color: #fff; border-color: #0f6e56; }
+  .toggle.conflict { background: #faece7; color: #993c1d; border-color: #d85a30; }
+  .toggle.readonly { cursor: default; opacity: 0.65; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .li { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #888; }
+  .ld { width: 10px; height: 10px; border-radius: 2px; }
+  .summary { margin-bottom: 1rem; }
+  .sum-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0ee; font-size: 13px; }
+  .sum-row:last-child { border-bottom: none; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+  .ba { background: #e1f5ee; color: #0f6e56; }
+  .bb { background: #e8f0fe; color: #1a56db; }
+  .bc { background: #faece7; color: #993c1d; }
+  .bu { background: #f5f5f3; color: #999; border: 1px solid #e5e5e2; }
+  .cal-btn { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; background: #1a1a1a; color: #fff; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.1s; margin-bottom: 1rem; }
+  .cal-btn:hover { background: #333; }
+  .copy-box { background: #f5f5f3; border: 1px solid #e5e5e2; border-radius: 10px; padding: 1rem; display: none; margin-bottom: 1rem; }
+  .copy-box p { font-size: 13px; color: #444; margin-bottom: 10px; line-height: 1.6; }
+  .copy-note { font-size: 12px; color: #888; margin-top: 8px; text-align: center; }
+  #setup { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Carpool Scheduler</h1>
+  <p class="subtitle">Each family enters their own driving days · schedules sync in real time</p>
+
+  <div id="status-msg" class="status"></div>
+
+  <!-- First-time family selection -->
+  <div id="onboarding" class="card">
+    <div class="card-title">Which family are you?</div>
+    <div class="row2">
+      <button onclick="saveOnboarding('A')" style="padding:16px;font-size:15px;font-weight:600;border-color:#5dcaa5;background:#e1f5ee;color:#0f6e56;">Saunders</button>
+      <button onclick="saveOnboarding('B')" style="padding:16px;font-size:15px;font-weight:600;">Wang</button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" style="display:none;">
+    <div class="sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Connecting...</span>
+      <span style="margin-left:auto;display:flex;gap:8px;">
+        <button onclick="loadData()" style="font-size:12px;padding:5px 12px;">Refresh</button>
+        <button onclick="resetOnboarding()" style="font-size:12px;padding:5px 12px;">Switch family</button>
+      </span>
+    </div>
+
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">← Prev</button>
+      <span class="week-label" id="week-label"></span>
+      <button onclick="changeWeek(1)">Next →</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#1d9e75;"></div>Driving</div>
+      <div class="li"><div class="ld" style="background:#e1f5ee;border:1px solid #5dcaa5;"></div>Available</div>
+      <div class="li"><div class="ld" style="background:#f5f5f3;border:1px solid #ddd;"></div>Unavailable</div>
+      <div class="li"><div class="ld" style="background:#faece7;border:1px solid #d85a30;"></div>Conflict</div>
+    </div>
+
+    <div class="card summary" id="summary"></div>
+
+    <button class="cal-btn" onclick="buildCalMessage()">Add my driving days to Google Calendar →</button>
+
+    <div class="copy-box" id="copy-box">
+      <p id="copy-text"></p>
+      <button class="btn-primary" onclick="copyMessage()" style="width:100%;">Copy message</button>
+      <div class="copy-note">Paste into Claude.ai — it will add the events to your calendar.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbbdY3CUq-sXXOYethvK9RtQX8c3BsyB9sA0INSs0Irpj7VKx1Om2jFQHUWq_rSO5E/exec';
+const FAMILY_NAMES = { A: 'Saunders', B: 'Wang' };
+const DAYS = ['Mon','Tue','Wed','Thu','Fri'];
+const STATES = ['unavailable','available','driving'];
+let weekOffset = 0;
+let scheduleData = {};
+let myFamily = 'A';
+let myName = '';
+
+function saveOnboarding(fam) {
+  myFamily = fam;
+  myName = fam === 'A' ? 'Saunders' : 'Wang';
+  localStorage.setItem('carpool_family', myFamily);
+  localStorage.setItem('carpool_name', myName);
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadData();
+}
+
+function resetOnboarding() {
+  localStorage.removeItem('carpool_family');
+  localStorage.removeItem('carpool_name');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('onboarding').style.display = 'block';
+}
+
+function getMonday(offset) {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day) + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function getWeekKey(offset) { return getMonday(offset).toISOString().slice(0,10); }
+function getDayDate(offset, dayIdx) { const d = getMonday(offset); d.setDate(d.getDate() + dayIdx); return d; }
+function getWeekDates(offset) {
+  const s = getMonday(offset), e = new Date(s); e.setDate(e.getDate() + 4);
+  const f = x => x.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  return `${f(s)} – ${f(e)}`;
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg; el.className = 'status ' + type; el.style.display = 'block';
+  if (type === 'success') setTimeout(() => el.style.display = 'none', 3000);
+}
+function setSyncState(state, msg) {
+  document.getElementById('sync-dot').className = 'sync-dot ' + state;
+  document.getElementById('sync-label').textContent = msg;
+}
+
+async function loadData() {
+  setSyncState('spin', 'Loading...');
+  try {
+    const res = await fetch(SCRIPT_URL);
+    if (!res.ok) throw new Error('Error ' + res.status);
+    scheduleData = await res.json();
+    setSyncState('ok', 'Synced');
+    render();
+  } catch(e) {
+    setSyncState('off', 'Sync failed — ' + e.message);
+  }
+}
+
+function getState(family, dayIdx) {
+  const key = getWeekKey(weekOffset)+'|'+DAYS[dayIdx];
+  return (scheduleData[key] && scheduleData[key][family]) || 'unavailable';
+}
+
+async function cycleState(dayIdx) {
+  const cur = getState(myFamily, dayIdx);
+  const next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
+  const key = getWeekKey(weekOffset)+'|'+DAYS[dayIdx];
+  if (!scheduleData[key]) scheduleData[key] = { A:'unavailable', B:'unavailable' };
+  scheduleData[key][myFamily] = next;
+  render();
+  setSyncState('spin', 'Saving...');
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ week: getWeekKey(weekOffset), day: DAYS[dayIdx], family: myFamily, state: next })
+    });
+    if (!res.ok) throw new Error('Error ' + res.status);
+    setSyncState('ok', 'Saved');
+  } catch(e) {
+    setSyncState('off', 'Save failed — ' + e.message);
+  }
+}
+
+function getDisplayName(fam) {
+  if (fam === myFamily) return myName + ' (you)';
+  return fam === 'A' ? FAMILY_NAMES.A : FAMILY_NAMES.B;
+}
+
+function buildCalMessage() {
+  const drivingDays = DAYS.filter((_, i) => getState(myFamily, i) === 'driving');
+  const box = document.getElementById('copy-box');
+  if (drivingDays.length === 0) { showStatus('No driving days marked for your family this week.', 'error'); box.style.display = 'none'; return; }
+  const dates = drivingDays.map(day => {
+    const d = getDayDate(weekOffset, DAYS.indexOf(day));
+    return day + ' ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  });
+  document.getElementById('copy-text').textContent = 'Please add "School carpool" to my Google Calendar at 8:00–8:30 AM for: ' + dates.join(', ') + '.';
+  box.style.display = 'block';
+}
+
+function copyMessage() {
+  navigator.clipboard.writeText(document.getElementById('copy-text').textContent)
+    .then(() => showStatus('Copied! Paste into Claude.ai to add calendar events.', 'success'));
+}
+
+function render() {
+  document.getElementById('week-label').textContent = getWeekDates(weekOffset);
+  document.getElementById('copy-box').style.display = 'none';
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.appendChild(document.createElement('div'));
+  DAYS.forEach(d => { const el = document.createElement('div'); el.className = 'hday'; el.textContent = d; grid.appendChild(el); });
+
+  ['A','B'].forEach(fam => {
+    const ne = document.createElement('div'); ne.className = 'hname';
+    ne.textContent = getDisplayName(fam);
+    grid.appendChild(ne);
+    DAYS.forEach((_, i) => {
+      const sA = getState('A', i), sB = getState('B', i);
+      const state = fam === 'A' ? sA : sB;
+      const isConflict = sA === 'driving' && sB === 'driving';
+      const isMyRow = fam === myFamily;
+      const btn = document.createElement('button');
+      btn.className = 'toggle ' + (isConflict ? 'conflict' : state) + (isMyRow ? '' : ' readonly');
+      btn.textContent = isConflict ? 'conflict' : state === 'driving' ? '✓ driving' : state === 'available' ? 'available' : '—';
+      if (isMyRow) btn.onclick = () => cycleState(i);
+      grid.appendChild(btn);
+    });
+  });
+
+  const sum = document.getElementById('summary');
+  sum.innerHTML = '<div class="card-title">This week\'s schedule</div>';
+  DAYS.forEach((day, i) => {
+    const sA = getState('A', i), sB = getState('B', i);
+    let badge = '';
+    if (sA === 'driving' && sB === 'driving') badge = '<span class="badge bc">conflict</span>';
+    else if (sA === 'driving') badge = '<span class="badge ba">' + (myFamily === 'A' ? myName : FAMILY_NAMES.A) + '</span>';
+    else if (sB === 'driving') badge = '<span class="badge bb">' + (myFamily === 'B' ? myName : FAMILY_NAMES.B) + '</span>';
+    else badge = '<span class="badge bu">unassigned</span>';
+    sum.innerHTML += '<div class="sum-row"><span style="font-weight:600">' + day + '</span>' + badge + '</div>';
+  });
+}
+
+function changeWeek(dir) { weekOffset += dir; render(); }
+
+window.onload = function() {
+  const savedFamily = localStorage.getItem('carpool_family');
+  if (savedFamily) {
+    myFamily = savedFamily;
+    myName = savedFamily === 'A' ? 'Saunders' : 'Wang';
+    document.getElementById('onboarding').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  }
+};
+</script>
+</body>
+</html>
