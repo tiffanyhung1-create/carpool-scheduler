@@ -117,7 +117,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx7f5eEBat_eRzZ-CdtQKDwioX6IKwDIn_RTFjnazYJGq6JN8M3BLmIUsynkrcoXyJFww/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlYsxubTkTPSAqwmTS70ZjBRULqDVDZFqUgFmYLdFDedkJ39zF2_P0f6PlF62fM7HYFg/exec';
 const FAMILY_NAMES = { A: 'Saunders', B: 'Wang' };
 const DAYS = ['Mon','Tue','Wed','Thu','Fri'];
 const STATES = ['unavailable','available','driving'];
@@ -150,7 +150,11 @@ function getMonday(offset) {
   d.setHours(0,0,0,0);
   return d;
 }
-function getWeekKey(offset) { return getMonday(offset).toISOString().slice(0,10); }
+function getWeekKey(offset) {
+  const d = getMonday(offset);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[d.getMonth()] + d.getDate() + '-' + d.getFullYear();
+}
 function getDayDate(offset, dayIdx) { const d = getMonday(offset); d.setDate(d.getDate() + dayIdx); return d; }
 function getWeekDates(offset) {
   const s = getMonday(offset), e = new Date(s); e.setDate(e.getDate() + 4);
